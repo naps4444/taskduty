@@ -1,0 +1,19 @@
+.carousel {
+    display: flex;
+    overflow: hidden;
+    justify-content: center;
+  }
+  
+  .imageContainer {
+    flex: 1;
+    /* min-width: 33.33%; Ensure 3 images fit in the viewport */
+    transition: transform 0.5s ease-in-out;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .image {
+    width: 418.56px;
+    height: 380px;
+  }
+  
