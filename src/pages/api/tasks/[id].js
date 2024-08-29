@@ -1,60 +1,66 @@
-// /src/pages/api/tasks/[id].js
-import { ObjectId } from 'mongodb';
-import clientPromise from '@/lib/mongodb'; // Ensure this path is correct
+import connectMongoDB from '@/lib/mongodb';
+import Task from '@/models/Task';
 
 export default async function handler(req, res) {
+  const { method } = req;
   const { id } = req.query;
-  const client = await clientPromise;
-  const db = client.db('uctask'); // Replace 'taskdb' with your database name
-  const collection = db.collection('tasks'); // Replace 'tasks' with your collection name
 
-  switch (req.method) {
+  await connectMongoDB();
+
+  console.log('Request Method:', method); // NEW: Log the HTTP method
+  console.log('Request Body:', req.body); // NEW: Log the request body
+
+  switch (method) {
     case 'GET':
       try {
-        const task = await collection.findOne({ _id: new ObjectId(id) });
-        if (task) {
-          res.status(200).json(task);
-        } else {
-          res.status(404).json({ message: 'Task not found.' });
+        const task = await Task.findById(id);
+        if (!task) {
+          return res.status(404).json({ success: false, error: 'Task not found' });
         }
+        res.status(200).json({ success: true, data: task });
       } catch (error) {
-        res.status(500).json({ message: 'Error fetching task.', error });
+        console.error('Error fetching task:', error.message); // NEW: Detailed error logging
+        res.status(400).json({ success: false, error: error.message });
       }
       break;
 
     case 'PUT':
       try {
+        // Validate the request body before updating
         const { title, description, tag } = req.body;
-        const updatedTask = await collection.findOneAndUpdate(
-          { _id: new ObjectId(id) },
-          { $set: { title, description, tag } },
-          { returnOriginal: false }
-        );
-        if (updatedTask.value) {
-          res.status(200).json(updatedTask.value);
-        } else {
-          res.status(404).json({ message: 'Task not found.' });
+        if (!title || !description || !tag) {
+          return res.status(400).json({
+            success: false,
+            error: 'Title, description, and tag are required fields.',
+          });
         }
+
+        const task = await Task.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        if (!task) {
+          return res.status(404).json({ success: false, error: 'Task not found' });
+        }
+        res.status(200).json({ success: true, data: task });
       } catch (error) {
-        res.status(500).json({ message: 'Error updating task.', error });
+        console.error('Error updating task:', error.message); // NEW: Detailed error logging
+        res.status(400).json({ success: false, error: error.message });
       }
       break;
 
     case 'DELETE':
       try {
-        const result = await collection.deleteOne({ _id: new ObjectId(id) });
-        if (result.deletedCount === 1) {
-          res.status(204).end();
-        } else {
-          res.status(404).json({ message: 'Task not found.' });
+        const deletedTask = await Task.findByIdAndDelete(id); // UPDATED: Use findByIdAndDelete
+        if (!deletedTask) {
+          return res.status(404).json({ success: false, error: 'Task not found' });
         }
+        res.status(200).json({ success: true, data: {} });
       } catch (error) {
-        res.status(500).json({ message: 'Error deleting task.', error });
+        console.error('Error deleting task:', error.message); // NEW: Detailed error logging
+        res.status(400).json({ success: false, error: error.message });
       }
       break;
 
     default:
-      res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
-      res.status(405).end(`Method ${req.method} Not Allowed`);
+      res.status(405).json({ success: false, error: `Method ${method} Not Allowed` }); // NEW: Improved error handling for unsupported methods
+      break;
   }
 }

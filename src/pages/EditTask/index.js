@@ -1,38 +1,49 @@
-import NavBar from '@/components/NavBar';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import NavBar from '@/components/NavBar';
 import ScrollToTopButton from '@/components/ScrollToTopButton';
 
-const NewTask = () => {
+const EditTask = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedValue, setSelectedValue] = useState('');
   const [options] = useState(['Urgent', 'Important']);
+  
   const router = useRouter();
   const { query } = router;
   const taskId = query.id;
 
+  useEffect(() => {
+    if (taskId) {
+      fetch(`/api/tasks/${taskId}`)
+        .then(response => {
+          if (!response.ok) throw new Error('Error fetching task');
+          return response.json();
+        })
+        .then(data => {
+          const task = data.data; // Adjusted to use the 'data' field from the API response
+          setTitle(task.title);
+          setDescription(task.description);
+          setSelectedValue(task.tag);
+        })
+        .catch(error => console.error('Error fetching task:', error));
+    }
+  }, [taskId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if all fields are filled
     if (!title || !description || !selectedValue) {
       console.error('All fields are required.');
       return;
     }
 
-    const task = {
-      title,
-      description,
-      tag: selectedValue,
-    };
+    const task = { title, description, tag: selectedValue };
 
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task),
       });
 
@@ -41,8 +52,7 @@ const NewTask = () => {
         throw new Error(errorData.message || `Error saving task: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Task saved successfully:', data);
+      console.log('Task updated successfully');
       router.push('/MyTask');
     } catch (error) {
       console.error('Error saving task:', error.message);
@@ -118,4 +128,4 @@ const NewTask = () => {
   );
 };
 
-export default NewTask;
+export default EditTask;

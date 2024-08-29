@@ -66,7 +66,7 @@ const App = () => {
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Non tellus, sapien, morbi ante nunc euismod ac felis ac. Massa et, at platea tempus duis non eget. Hendrerit tortor fermentum bibendum mi nisl semper porttitor. Nec accumsan.
           </p>
 
-          <Link href="#" className='px-4 w-[150px] rounded-lg py-2 bg-[#974FD0] text-white' >Go to My Tasks</Link>
+          <Link href="/MyTask" className='px-4 w-[150px] rounded-lg py-2 bg-[#974FD0] text-white' >Go to My Tasks</Link>
         </div>
 
         <div className='flex justify-end '>
